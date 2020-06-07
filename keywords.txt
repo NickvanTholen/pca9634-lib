@@ -1,0 +1,7 @@
+PCA9634	KEYWORD1
+begin	KEYWORD2
+softReset	KEYWORD2
+writeReg	KEYWORD2
+chanPwm	KEYWORD2
+enabled	KEYWORD2
+pinType	KEYWORD2

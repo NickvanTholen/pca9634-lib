@@ -18,7 +18,8 @@ The only thing that you will need to include is the **Wire.h** library, this lib
 * **SoftReset** - *your_name*.softReset(), this function enables the software resetting of the PCA9634 chip. **Be careful with this function as it will reset all registers!**
 
 ## Changelog
-The initial setup of this library
+* *07-06-2020* The initial setup of this library.
+* *07-06-2020* Added a keywords.txt file and example for blinking leds with the pintype function.
 
 ## Future updates
 * Fade in/out function
