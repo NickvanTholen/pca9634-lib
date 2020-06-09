@@ -1,6 +1,6 @@
-// Example to flash some individual leds and flash all leds
+// Example to fade in and fade out each led channel
 // Created by: Nick van Tholen
-// Date: 07-06-2020
+// Date: 09-06-2020
 
 // Libraries
 #include <Wire.h>
@@ -21,15 +21,13 @@ void setup() {
 }
 
 void loop() {
-  // For loop for blinking each led channel on the chip
+  // For loop for fade in and fade out each led channel on the chip
   for(int i = 0; i < 8; i++){
     // Turns on the led, last bool element is not needed because it defaults to false
-    ledDriver.on(i);
+    ledDriver.fadeIn(i, 1000);
     // Delay for 1 second
     delay(1000);
     // Turns off the led, last bool element is not needed because it defaults to false
-    ledDriver.off(i);
-    // Delay for 1 second
-    delay(1000);
+    ledDriver.fadeOut(i, 1000);
   }
 }

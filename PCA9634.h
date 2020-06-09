@@ -22,10 +22,18 @@ class PCA9634
         void softReset();
         void begin();
         uint8_t writeReg(uint8_t reg, uint8_t val);
-        void chanPwm(uint8_t channel, uint8_t value);
         void enabled(bool state);
-        void pinType(uint8_t type, uint8_t pin, bool all=false);
+        void on(uint8_t pin);
+        void off(uint8_t pin);
+        void allOn();
+        void allOff();
+        void fadeIn(uint8_t pin, int time, uint8_t brightness = 255);
+        void fadeOut(uint8_t pin, int time, uint8_t brightness = 0);
+        void pwm(uint8_t pin, uint8_t value);
     private:
+        void chanPwm(uint8_t channel, uint8_t value);
+        void pinType(uint8_t type, uint8_t pin, bool all=false);
+        uint8_t _brightness[8];
         uint8_t _addr;
         uint8_t _oepin;
         uint8_t _LEDOUT0Register = 0x00;
