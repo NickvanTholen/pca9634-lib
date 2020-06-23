@@ -2,6 +2,7 @@
     PCA9634.cpp - Library for NXP PCA9634 chip.
     Created by Nick van Tholen, June 2, 2020.
     Released for Emit IT.
+    Last modified, 23 June, 2020.
 */
 #include "Arduino.h"
 #include "PCA9634.h"
@@ -47,6 +48,16 @@ uint8_t PCA9634::writeReg(uint8_t reg, uint8_t val)
     return Wire.endTransmission();
 }
 
+// Reads a register
+uint8_t PCA9634::readReg(uint8_t reg)
+{
+    Wire.beginTransmission(_addr);
+    Wire.write(reg & 0x1F);
+    Wire.endTransmission();
+    Wire.requestFrom(_addr, (uint8_t)1);
+    return Wire.read();
+}
+
 // Uses the output enable pin to enable and disable all channels, doesn't effect the previous state.
 void PCA9634::enabled(bool state)
 {
@@ -88,7 +99,6 @@ void PCA9634::allOff(){
 
 // Fade in for single led channel
 void PCA9634::fadeIn(uint8_t pin, int time, uint8_t brightness){
-    _brightness[pin] = brightness;
     pinType(2, pin);
     int interval = time / brightness;
     for (int i = 0; i <= brightness; i++)
@@ -96,17 +106,24 @@ void PCA9634::fadeIn(uint8_t pin, int time, uint8_t brightness){
         chanPwm(pin, i);
         delay(interval);
     }
+    if (brightness == 255){
+        pinType(1, pin);
+    }
 }
 
 // Fade out for single led channel
 void PCA9634::fadeOut(uint8_t pin, int time, uint8_t brightness){
+    uint8_t regValue;
     pinType(2, pin);
-    int interval = time / (_brightness[pin] - brightness);
-    for (int i = _brightness[pin]; i >= brightness; i--){
+    regValue = readReg(pin + 2);
+    int interval = time / (regValue - brightness);
+    for (int i = regValue; i >= brightness; i--){
         chanPwm(pin, i);
         delay(interval);
     }
-    _brightness[pin] = brightness;
+    if (brightness == 0){
+        pinType(0, pin);
+    }
 }
 
 // Pwm function for each individual channel
@@ -115,12 +132,43 @@ void PCA9634::pwm(uint8_t pin, uint8_t value){
     chanPwm(pin, value);
 }
 
+// Check if a led is Off, On or PWM modus
+uint8_t PCA9634::ledStatus(uint8_t pin){
+    uint8_t regValue;
+    bool first, second;
+    if (pin < 4){
+        regValue = readReg(LEDOUT0);
+        first = bitRead(regValue, (pin*2));
+        second = bitRead(regValue, (pin*2+1));
+    }
+    else {
+        pin -= 4;
+        regValue = readReg(LEDOUT1);
+        first = bitRead(regValue, (pin*2));
+        second = bitRead(regValue, (pin*2+1));
+    }
+    if (!first && !second){
+        return 0;
+    }
+    else if(first && !second){
+        return 1;
+    }
+    else if(!first && second){
+        return 2;
+    }
+}
+
+// Check the PWM value of a channel
+uint8_t PCA9634::pwmStatus(uint8_t pin){
+    return readReg(pin + 2);
+}
+
 // Private functions //
 
 // Sets a channel or all channels to different state
 void PCA9634::pinType(uint8_t type, uint8_t pin, bool all)
 {
-    uint8_t dataType;
+    uint8_t dataType, regValue;
     if(type > 2){
         type = 0;
     }
@@ -132,17 +180,19 @@ void PCA9634::pinType(uint8_t type, uint8_t pin, bool all)
             writeReg(LEDOUT1, LED_OFF_ALL);
             break;
         }
-        if(pin<4){
-            bitClear(_LEDOUT0Register, (pin*2));
-            bitClear(_LEDOUT0Register, (pin*2+1));
-            writeReg(LEDOUT0, _LEDOUT0Register);
+        else if(pin<4){
+            regValue = readReg(LEDOUT0);
+            bitClear(regValue, (pin*2));
+            bitClear(regValue, (pin*2+1));
+            writeReg(LEDOUT0, regValue);
             break;
         }
-        if(pin>=4){
+        else if(pin>=4){
             pin -= 4;
-            bitClear(_LEDOUT1Register, (pin*2));
-            bitClear(_LEDOUT1Register, (pin*2+1));
-            writeReg(LEDOUT1, _LEDOUT1Register);
+            regValue = readReg(LEDOUT1);
+            bitClear(regValue, (pin*2));
+            bitClear(regValue, (pin*2+1));
+            writeReg(LEDOUT1, regValue);
             break;
         }
         break;
@@ -152,17 +202,19 @@ void PCA9634::pinType(uint8_t type, uint8_t pin, bool all)
             writeReg(LEDOUT1, LED_ON_ALL);
             break;
         }
-        if(pin<4){
-            bitSet(_LEDOUT0Register, (pin*2));
-            bitClear(_LEDOUT0Register, (pin*2+1));
-            writeReg(LEDOUT0, _LEDOUT0Register);
+        else if(pin<4){
+            regValue = readReg(LEDOUT0);
+            bitSet(regValue, (pin*2));
+            bitClear(regValue, (pin*2+1));
+            writeReg(LEDOUT0, regValue);
             break;
         }
-        if(pin>=4){
+        else if(pin>=4){
             pin -= 4;
-            bitSet(_LEDOUT1Register, (pin*2));
-            bitClear(_LEDOUT1Register, (pin*2+1));
-            writeReg(LEDOUT1, _LEDOUT1Register);
+            regValue = readReg(LEDOUT1);
+            bitSet(regValue, (pin*2));
+            bitClear(regValue, (pin*2+1));
+            writeReg(LEDOUT1, regValue);
             break;
         }
         break;
@@ -172,17 +224,19 @@ void PCA9634::pinType(uint8_t type, uint8_t pin, bool all)
             writeReg(LEDOUT1, LED_PWM_ALL);
             break;
         }
-        if(pin<4){
-            bitClear(_LEDOUT0Register, (pin*2));
-            bitSet(_LEDOUT0Register, (pin*2+1));
-            writeReg(LEDOUT0, _LEDOUT0Register);
+        else if(pin<4){
+            regValue = readReg(LEDOUT0);
+            bitClear(regValue, (pin*2));
+            bitSet(regValue, (pin*2+1));
+            writeReg(LEDOUT0, regValue);
             break;
         }
-        if(pin>=4){
+        else if(pin>=4){
             pin -= 4;
-            bitClear(_LEDOUT1Register, (pin*2));
-            bitSet(_LEDOUT1Register, (pin*2+1));
-            writeReg(LEDOUT1, _LEDOUT1Register);
+            regValue = readReg(LEDOUT1);
+            bitClear(regValue, (pin*2));
+            bitSet(regValue, (pin*2+1));
+            writeReg(LEDOUT1, regValue);
             break;
         }
         break;

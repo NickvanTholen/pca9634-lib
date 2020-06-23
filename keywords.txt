@@ -2,6 +2,7 @@ PCA9634	KEYWORD1
 begin	KEYWORD2
 softReset	KEYWORD2
 writeReg	KEYWORD2
+readReg KEYWORD2
 enabled	KEYWORD2
 on	KEYWORD2
 off	KEYWORD2
@@ -10,3 +11,5 @@ allOff	KEYWORD2
 fadeIn	KEYWORD2
 fadeOut	KEYWORD2
 pwm	KEYWORD2
+ledStatus	KEYWORD2
+pwmStatus	KEYWORD2
